@@ -9,6 +9,19 @@ type AuthFormProps = {
   returnTo?: string;
 };
 
+async function readAuthResult(response: Response): Promise<{ message?: string; error?: string }> {
+  try {
+    const result: unknown = await response.json();
+    if (typeof result !== 'object' || result === null) return {};
+
+    const message = 'message' in result && typeof result.message === 'string' ? result.message : undefined;
+    const error = 'error' in result && typeof result.error === 'string' ? result.error : undefined;
+    return { message, error };
+  } catch {
+    return {};
+  }
+}
+
 export function AuthForm({ mode, returnTo }: AuthFormProps) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -39,12 +52,17 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
           mode === 'login' ? { email, password } : { name, email, password },
         ),
       });
-      const result: { message?: string; error?: string } = await response.json();
+      const result = await readAuthResult(response);
       if (!response.ok) {
         if (mode === 'login' && response.status === 403) {
           setAdminLoginHint(true);
         }
-        setMessage(result.error || 'We could not complete your request. Please try again.');
+        setMessage(
+          result.error ||
+            (mode === 'signup'
+              ? 'Sign-up is temporarily unavailable. Please try again later.'
+              : 'We could not complete your request. Please try again.'),
+        );
         return;
       }
 
@@ -74,9 +92,12 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, code }),
       });
-      const result: { message?: string; error?: string } = await response.json();
+      const result = await readAuthResult(response);
       if (!response.ok) {
-        setMessage(result.error || 'We could not verify your email. Please try again.');
+        setMessage(
+          result.error ||
+            'We could not verify your email. Please try again later.',
+        );
         return;
       }
 

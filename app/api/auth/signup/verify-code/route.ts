@@ -29,37 +29,48 @@ export async function POST(request: Request) {
   }
 
   const email = body.email.trim().toLowerCase();
-  const result = await completeSignup(email, body.code);
-  if (result === 'expired') {
+  try {
+    const result = await completeSignup(email, body.code);
+    if (result === 'expired') {
+      return NextResponse.json(
+        { error: 'That code has expired. Start sign-up again to request another.' },
+        { status: 400 },
+      );
+    }
+    if (result === 'locked') {
+      return NextResponse.json(
+        { error: 'Too many incorrect attempts. Start sign-up again to request a new code.' },
+        { status: 429 },
+      );
+    }
+    if (result === 'invalid') {
+      return NextResponse.json({ error: 'That code is not correct. Please try again.' }, { status: 400 });
+    }
+    if (result === 'exists') {
+      return NextResponse.json({ error: 'An account already exists for this email.' }, { status: 409 });
+    }
+    if (result !== 'verified') {
+      throw new Error(`Unexpected signup verification result: ${result}`);
+    }
+
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_COOKIE, createSessionToken(email), {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60,
+    });
+
+    return NextResponse.json({ message: 'Your email is verified and your account is ready.' });
+  } catch (error) {
+    console.error('Unable to verify the sign-up request:', error);
     return NextResponse.json(
-      { error: 'That code has expired. Start sign-up again to request another.' },
-      { status: 400 },
+      {
+        error:
+          'We could not finish sign-up. Check the Vercel function logs and verify the Supabase environment variables and database schema.',
+      },
+      { status: 503 },
     );
   }
-  if (result === 'locked') {
-    return NextResponse.json(
-      { error: 'Too many incorrect attempts. Start sign-up again to request a new code.' },
-      { status: 429 },
-    );
-  }
-  if (result === 'invalid') {
-    return NextResponse.json({ error: 'That code is not correct. Please try again.' }, { status: 400 });
-  }
-  if (result === 'exists') {
-    return NextResponse.json({ error: 'An account already exists for this email.' }, { status: 409 });
-  }
-  if (result !== 'verified') {
-    throw new Error(`Unexpected signup verification result: ${result}`);
-  }
-
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE, createSessionToken(email), {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 7 * 24 * 60 * 60,
-  });
-
-  return NextResponse.json({ message: 'Your email is verified and your account is ready.' });
 }
