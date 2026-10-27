@@ -5,11 +5,16 @@ import { isAdminSession } from '@/lib/admin-auth';
 export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
+  let authorized = false;
   try {
-    if (!(await isAdminSession())) redirect('/admin/login');
+    authorized = await isAdminSession();
   } catch (error) {
     console.error('Unable to authorize admin page:', error);
-    redirect('/admin/login');
   }
+
+  if (!authorized) {
+    redirect(`/login?next=${encodeURIComponent('/admin')}`);
+  }
+
   return <AdminDashboard />;
 }

@@ -1,10 +1,32 @@
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { getAuthUser, readSessionToken, SESSION_COOKIE } from '@/lib/auth';
-import { createOrder } from '@/lib/orders';
+import { createOrder, readCustomerOrders } from '@/lib/orders';
 import { getProductPrice } from '@/lib/products';
 
 export const runtime = 'nodejs';
+
+export async function GET() {
+  const cookieStore = await cookies();
+  const email = readSessionToken(cookieStore.get(SESSION_COOKIE)?.value);
+  if (!email) {
+    return NextResponse.json({ error: 'Please sign in to view your orders.' }, { status: 401 });
+  }
+
+  try {
+    if (!(await getAuthUser(email))) {
+      return NextResponse.json({ error: 'Your account could not be found.' }, { status: 401 });
+    }
+
+    return NextResponse.json(await readCustomerOrders(email));
+  } catch (error) {
+    console.error('Unable to load customer orders:', error);
+    return NextResponse.json(
+      { error: 'We could not load your orders. Please try again later.' },
+      { status: 500 },
+    );
+  }
+}
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();

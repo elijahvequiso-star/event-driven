@@ -20,6 +20,11 @@ export type StoreOrder = {
   createdAt: string;
 };
 
+export type CustomerOrder = Pick<
+  StoreOrder,
+  'id' | 'paymentMethod' | 'items' | 'total' | 'status' | 'createdAt'
+>;
+
 export async function readOrders(): Promise<StoreOrder[]> {
   const { data, error } = await getSupabaseAdmin()
     .from('orders')
@@ -27,6 +32,23 @@ export async function readOrders(): Promise<StoreOrder[]> {
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data.map(fromDatabaseOrder);
+}
+
+export async function readCustomerOrders(email: string): Promise<CustomerOrder[]> {
+  const { data, error } = await getSupabaseAdmin()
+    .from('orders')
+    .select('id,payment_method,items,total,status,created_at')
+    .eq('email', email)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data.map((order) => ({
+    id: order.id,
+    paymentMethod: order.payment_method,
+    items: order.items as OrderItem[],
+    total: Number(order.total),
+    status: order.status,
+    createdAt: order.created_at,
+  }));
 }
 
 export async function createOrder(

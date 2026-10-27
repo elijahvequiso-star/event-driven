@@ -122,7 +122,7 @@ export function AdminDashboard() {
     try {
       const response = await fetch('/api/auth/logout', { method: 'POST' });
       if (!response.ok) throw new Error('Unable to sign out.');
-      router.push('/admin/login');
+      router.push('/login?next=%2Fadmin');
       router.refresh();
     } catch {
       setError('We could not sign out. Please try again.');

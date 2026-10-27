@@ -9,14 +9,20 @@ type AuthFormProps = {
   returnTo?: string;
 };
 
-async function readAuthResult(response: Response): Promise<{ message?: string; error?: string }> {
+async function readAuthResult(
+  response: Response,
+): Promise<{ message?: string; error?: string; role?: 'user' | 'admin' }> {
   try {
     const result: unknown = await response.json();
     if (typeof result !== 'object' || result === null) return {};
 
     const message = 'message' in result && typeof result.message === 'string' ? result.message : undefined;
     const error = 'error' in result && typeof result.error === 'string' ? result.error : undefined;
-    return { message, error };
+    const role =
+      'role' in result && (result.role === 'user' || result.role === 'admin')
+        ? result.role
+        : undefined;
+    return { message, error, role };
   } catch {
     return {};
   }
@@ -30,17 +36,17 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
   const [code, setCode] = useState('');
   const [stage, setStage] = useState<'details' | 'verify'>('details');
   const [message, setMessage] = useState('');
-  const [adminLoginHint, setAdminLoginHint] = useState(false);
   const [busy, setBusy] = useState(false);
   const destination =
     returnTo?.startsWith('/') && !returnTo.startsWith('//') && !returnTo.includes('\\')
       ? returnTo
       : '/#new-in';
+  const customerDestination =
+    destination === '/admin' || destination.startsWith('/admin/') ? '/#new-in' : destination;
 
   const submitDetails = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setMessage('');
-    setAdminLoginHint(false);
     setBusy(true);
 
     try {
@@ -54,9 +60,6 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
       });
       const result = await readAuthResult(response);
       if (!response.ok) {
-        if (mode === 'login' && response.status === 403) {
-          setAdminLoginHint(true);
-        }
         setMessage(
           result.error ||
             (mode === 'signup'
@@ -67,8 +70,7 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
       }
 
       if (mode === 'login') {
-        router.push(destination);
-        router.refresh();
+        window.location.assign(result.role === 'admin' ? '/admin' : customerDestination);
         return;
       }
 
@@ -207,12 +209,6 @@ export function AuthForm({ mode, returnTo }: AuthFormProps) {
             {message}
           </p>
         ) : null}
-        {adminLoginHint ? (
-          <p className="auth-admin-hint">
-            <Link href="/admin/login">Go to admin sign in</Link>
-          </p>
-        ) : null}
-
         <p className="auth-switch">
           {mode === 'login' ? 'New to Morrow Studio?' : 'Already have an account?'}{' '}
           <Link

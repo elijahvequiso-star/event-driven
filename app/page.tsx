@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState, useSyncExternalStore } from 'react';
 import { defaultProducts } from '@/lib/default-products';
+import type { CustomerOrder } from '@/lib/orders';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -55,6 +56,13 @@ type PaymentMethod = 'gcash' | 'maya';
 
 type OrderConfirmation = {
   orderId: string;
+};
+
+const orderStatusLabels: Record<CustomerOrder['status'], string> = {
+  pending_verification: 'Payment pending verification',
+  paid: 'Payment verified',
+  fulfilled: 'Fulfilled',
+  cancelled: 'Cancelled',
 };
 
 const BAG_STORAGE_KEY = 'morrow-studio-bag';
@@ -122,6 +130,10 @@ export default function Home() {
   const [signingOut, setSigningOut] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
   const [bagOpen, setBagOpen] = useState(false);
+  const [bagView, setBagView] = useState<'bag' | 'orders'>('bag');
+  const [customerOrders, setCustomerOrders] = useState<CustomerOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersMessage, setOrdersMessage] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [paymentMessage, setPaymentMessage] = useState('');
@@ -247,10 +259,43 @@ export default function Home() {
     setCheckingAccount(true);
     try {
       if (await requireAccount('/#new-in')) {
+        setBagView('bag');
         setBagOpen(true);
       }
     } finally {
       setCheckingAccount(false);
+    }
+  };
+
+  const showCustomerOrders = async () => {
+    setBagView('orders');
+    setOrdersLoading(true);
+    setOrdersMessage('');
+    try {
+      const response = await fetch('/api/orders', { cache: 'no-store' });
+      const result: unknown = await response.json();
+      if (!response.ok) {
+        const message =
+          typeof result === 'object' &&
+          result !== null &&
+          'error' in result &&
+          typeof result.error === 'string'
+            ? result.error
+            : 'We could not load your orders. Please try again.';
+        if (response.status === 401) {
+          router.push(`/login?next=${encodeURIComponent('/#new-in')}`);
+          return;
+        }
+        throw new Error(message);
+      }
+      if (!Array.isArray(result)) throw new Error('The orders response was invalid.');
+      setCustomerOrders(result as CustomerOrder[]);
+    } catch (error) {
+      setOrdersMessage(
+        error instanceof Error ? error.message : 'We could not load your orders. Please try again.',
+      );
+    } finally {
+      setOrdersLoading(false);
     }
   };
 
@@ -561,7 +606,9 @@ export default function Home() {
                 <h2>
                   {orderConfirmation
                     ? 'Order received'
-                    : `Your bag (${bagItems.length})`}
+                    : bagView === 'orders'
+                      ? 'Your orders'
+                      : `Your bag (${bagItems.length})`}
                 </h2>
               </div>
               <button
@@ -577,6 +624,28 @@ export default function Home() {
                 <X aria-hidden="true" size={20} />
               </button>
             </div>
+            {!orderConfirmation && !checkoutOpen ? (
+              <div aria-label="Bag navigation" className="bag-view-switch" role="tablist">
+                <button
+                  aria-selected={bagView === 'bag'}
+                  className={bagView === 'bag' ? 'active' : ''}
+                  onClick={() => setBagView('bag')}
+                  role="tab"
+                  type="button"
+                >
+                  YOUR BAG ({bagItems.length})
+                </button>
+                <button
+                  aria-selected={bagView === 'orders'}
+                  className={bagView === 'orders' ? 'active' : ''}
+                  onClick={showCustomerOrders}
+                  role="tab"
+                  type="button"
+                >
+                  MY ORDERS
+                </button>
+              </div>
+            ) : null}
             {orderConfirmation ? (
               <div className="order-confirmation">
                 <span aria-hidden="true" className="order-confirmation-mark">
@@ -595,6 +664,9 @@ export default function Home() {
                   We&apos;ll use your account email, {accountUser?.email}, if we need to
                   contact you about delivery.
                 </p>
+                <Link className="button button-dark order-history-cta" href="/account">
+                  VIEW YOUR ORDERS <ArrowRight aria-hidden="true" size={15} />
+                </Link>
                 <button
                   className="place-order-button"
                   onClick={() => {
@@ -609,6 +681,57 @@ export default function Home() {
                 >
                   BACK TO SHOP
                 </button>
+              </div>
+            ) : bagView === 'orders' ? (
+              <div aria-live="polite" className="bag-orders-view" role="tabpanel">
+                {ordersLoading ? (
+                  <p className="bag-orders-message">Loading your orders…</p>
+                ) : ordersMessage ? (
+                  <p className="bag-orders-message" role="alert">{ordersMessage}</p>
+                ) : customerOrders.length === 0 ? (
+                  <div className="bag-orders-empty">
+                    <PackageCheck aria-hidden="true" size={26} />
+                    <h3>No orders yet.</h3>
+                    <p>Your orders will appear here after you place one.</p>
+                    <button type="button" onClick={() => setBagView('bag')}>
+                      BACK TO YOUR BAG
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bag-order-list">
+                    {customerOrders.map((order) => (
+                      <article className="bag-order-card" key={order.id}>
+                        <div className="bag-order-heading">
+                          <div>
+                            <strong>{order.id}</strong>
+                            <span>
+                              {new Date(order.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                              })}
+                            </span>
+                          </div>
+                          <span className={`customer-order-status status-${order.status}`}>
+                            {orderStatusLabels[order.status]}
+                          </span>
+                        </div>
+                        <ul>
+                          {order.items.map((item, index) => (
+                            <li key={`${order.id}-${item.name}-${index}`}>
+                              <span>{item.name}</span>
+                              <span>${item.unitPrice.toFixed(2)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="bag-order-footer">
+                          <span>Paid with {order.paymentMethod === 'gcash' ? 'GCash' : 'Maya'}</span>
+                          <strong>${order.total.toFixed(2)}</strong>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : bagItems.length && !checkoutOpen ? (
               <>

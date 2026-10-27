@@ -170,6 +170,7 @@
 .signed-in-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .logout-link {
@@ -1004,18 +1005,6 @@
   line-height: 1.6;
 }
 
-.auth-admin-hint {
-  margin: 10px 0 0;
-  font-size: 12px;
-  text-align: center;
-}
-
-.auth-admin-hint a {
-  color: var(--wine);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 .auth-switch {
   margin: 24px 0 0;
   color: #75675e;
@@ -1031,6 +1020,156 @@
 
 .account-card .auth-submit {
   width: 100%;
+}
+
+.order-history-page {
+  min-height: 100vh;
+  padding: 38px 24px 70px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(163 110 77 / 11%), transparent 45%),
+    var(--paper);
+}
+
+.order-history-shell {
+  width: min(100%, 900px);
+  margin: 0 auto;
+}
+
+.order-history-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.order-history-heading .eyebrow {
+  margin: 0 0 12px;
+}
+
+.order-history-heading h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(36px, 7vw, 52px);
+  font-weight: 400;
+}
+
+.order-history-heading .auth-description {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.customer-order-list {
+  display: grid;
+  gap: 16px;
+}
+
+.customer-order-card,
+.order-history-empty {
+  border: 1px solid #e7ded4;
+  background: #fffdfa;
+  padding: clamp(18px, 4vw, 28px);
+  box-shadow: 0 8px 24px rgb(40 28 25 / 3%);
+}
+
+.customer-order-heading,
+.customer-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.customer-order-number {
+  margin: 0;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.customer-order-date {
+  margin: 7px 0 0;
+  color: #75675e;
+  font-size: 12px;
+}
+
+.customer-order-status {
+  border: 1px solid #d6c6b5;
+  background: #f4ede5;
+  color: #60432f;
+  font-size: 9px;
+  letter-spacing: 0.05em;
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.customer-order-status.status-paid,
+.customer-order-status.status-fulfilled {
+  border-color: #b7c8b3;
+  background: #edf3eb;
+  color: #38533b;
+}
+
+.customer-order-status.status-cancelled {
+  border-color: #e0c3bd;
+  background: #f8ece9;
+  color: #8e3d33;
+}
+
+.customer-order-items {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  border-top: 1px solid #eee6dd;
+  border-bottom: 1px solid #eee6dd;
+  list-style: none;
+  padding: 16px 0;
+}
+
+.customer-order-items li,
+.customer-order-footer {
+  color: #62564e;
+  font-size: 12px;
+}
+
+.customer-order-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.customer-order-footer strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.order-history-empty h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.order-history-empty p {
+  color: #75675e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.order-history-empty a {
+  color: var(--wine);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.order-history-cta {
+  width: 100%;
+  margin: 12px 0;
 }
 
 .logout-wrap {
@@ -1113,6 +1252,143 @@
   font-family: Georgia, 'Times New Roman', serif;
   font-size: 30px;
   font-weight: 400;
+}
+
+.bag-view-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid #e0d7ce;
+  margin-bottom: 20px;
+}
+
+.bag-view-switch button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #75675e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  padding: 14px 8px 12px;
+}
+
+.bag-view-switch button.active {
+  border-bottom-color: var(--wine);
+  color: var(--wine);
+  font-weight: 600;
+}
+
+.bag-orders-view {
+  min-height: 0;
+  flex: 1;
+}
+
+.bag-order-list {
+  display: grid;
+  gap: 12px;
+}
+
+.bag-order-card {
+  border: 1px solid #e7ded4;
+  background: #fffdfa;
+  padding: 16px;
+}
+
+.bag-order-heading,
+.bag-order-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bag-order-heading > div {
+  display: grid;
+  gap: 5px;
+}
+
+.bag-order-heading strong {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.bag-order-heading > div > span,
+.bag-order-footer {
+  color: #75675e;
+  font-size: 11px;
+}
+
+.bag-order-heading .customer-order-status {
+  max-width: 150px;
+  line-height: 1.4;
+}
+
+.bag-order-card ul {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  border-top: 1px solid #eee6dd;
+  border-bottom: 1px solid #eee6dd;
+  list-style: none;
+  padding: 12px 0;
+}
+
+.bag-order-card li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #62564e;
+  font-size: 12px;
+}
+
+.bag-order-footer {
+  align-items: center;
+}
+
+.bag-order-footer strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.bag-orders-message {
+  color: #75675e;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.bag-orders-empty {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 34px 12px;
+  color: #75675e;
+  text-align: center;
+}
+
+.bag-orders-empty h3 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.bag-orders-empty p {
+  margin: 0 0 6px;
+  font-size: 12px;
+}
+
+.bag-orders-empty button {
+  border: 0;
+  background: transparent;
+  color: var(--wine);
+  cursor: pointer;
+  font: inherit;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .bag-close {
@@ -2449,6 +2725,21 @@
 }
 
 @media (max-width: 620px) {
+  .order-history-page {
+    padding: 28px 16px 48px;
+  }
+
+  .order-history-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .customer-order-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .admin-topbar {
     min-height: 64px;
     padding: 10px 14px;
